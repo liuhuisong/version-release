@@ -203,57 +203,26 @@ class VItem extends VIo
         }
     }
 
-    /**
-     * @param $file_tmp
-     * @param $config
-     * @return bool|string
-     */
-    public function makeItem($file_tmp, $attach, $config)
-    {
-        if (!is_uploaded_file($file_tmp) ||
-            !move_uploaded_file($file_tmp, $this->path . DIRECTORY_SEPARATOR . $this->bin)) {
-            return 'move file failed';
-        }
-
-        if (is_array($attach) && !empty($attach['name']) && !empty($attach['ext'])) {
-            $val = $this->bin . ".__doc." . $attach['ext'];
-            if (is_uploaded_file($attach['name']) &&
-                move_uploaded_file($attach['name'], $this->path . DIRECTORY_SEPARATOR . $val)) {
-                $this->setConfig('attach', $val);
-            }
-        }
-
-        if (is_array($config)) {
-            foreach ($config as $k => $v) {
-                if (in_array($k, array('user', 'document', 'description', 'version'))) {
-                    if ($k === 'description') {
-                        $v = preg_split("/[\r\n]/", $v);
-                        $v = array_filter($v);
-                    }
-                    if (!empty($v)) {
-                        $this->setConfig($k, $v);
-                    }
-                }
-            }
-            $this->setConfig('release', date('Y-m-d H:i:s'));
-        }
-        return true;
-    }
 
     public function getConfig($item)
     {
-        if ($item == 'bin') {
-            return $this->bin;
-        }
+        switch ($item) {
+            case  'bin':
+            {
+                return $this->bin;
+            }
 
-        if ($item == 'bin-size') {
-            return filesize($this->path . DIRECTORY_SEPARATOR . $this->bin);
-        }
+            case  'bin-size':
+            {
+                return filesize($this->path . DIRECTORY_SEPARATOR . $this->bin);
+            }
 
-        if (is_array($this->configure) && isset($this->configure[$item])) {
-            return $this->configure[$item];
+            default:
+                if (is_array($this->configure) && isset($this->configure[$item])) {
+                    return $this->configure[$item];
+                }
+                return false;
         }
-        return false;
     }
 
     public function setConfig($item, $value)
@@ -299,7 +268,8 @@ class VItem extends VIo
             case 'path':
                 $path1 = $_SERVER['PHP_SELF'];
                 $pi1 = pathinfo($path1);
-                return $pi1['dirname'] . DIRECTORY_SEPARATOR . $attach;
+                $pi2 = pathinfo($this->path);
+                return $pi1['dirname'] . DIRECTORY_SEPARATOR . $pi2['basename'] . DIRECTORY_SEPARATOR . $attach;
             default:
                 return false;
         }
@@ -581,10 +551,6 @@ $root = new VRoot();
             margin: 40px 20px -15px 4px;
         }
 
-        .version-dl {
-
-        }
-
         .row {
             margin-bottom: 10px;
         }
@@ -751,13 +717,12 @@ $root = new VRoot();
 
                         $url = $item->getDownloadPath();
                         $bin_size = $item->getConfig('bin-size');
-                        if ($bin_size > 0) {
+                        if (!empty($url) && $bin_size > 0) {
                             $n = number_format($bin_size);
-                        } else {
-                            $n = 0;
+                            echo "<div class='row'><div class='col-md-1'><div class='version-dt'>下载</div></div>" .
+                                "<div class='col-md-10'><div class='version-dd'><a href='$url'>$bin</a>, " .
+                                "<span class='text-muted small'> $n bytes</span></div></div></div>";
                         }
-                        echo "<div class='row'><div class='col-md-1'><div class='version-dt'>下载</div></div>" .
-                            "<div class='col-md-10'><div class='version-dd'><a href='$url'>$bin</a>, $n bytes</div></div></div>";
 
                         $description = $item->getConfig('description');
                         if (is_string($description)) {
@@ -768,7 +733,7 @@ $root = new VRoot();
                             $a = false;
                         }
                         if (is_array($a)) {
-                            $s = "<ol><li>" . implode('</li><li>', $a) . '</li></ol>';
+                            $s = "<ol class='text-muted'><li>" . implode('</li><li>', $a) . '</li></ol>';
 
                             echo "<div class='row'><div class='col-md-1'><div class='version-dt'>说明</div></div>" .
                                 "<div class='col-md-10'><div class='version-dd'>$s</div></div></div>";
@@ -785,19 +750,20 @@ $root = new VRoot();
                         $attach_path = $item->getAttachByFlag('path');
                         $attach_size = $item->getAttachByFlag('size');
                         if (!empty($attach_path) && $attach_size > 0) {
-                            $s = number_format($attach_size);
+                            $n = number_format($attach_size);
                             echo "<div class='row'><div class='col-md-1'><div class='version-dt'>附件</div></div>" .
-                                "<div class='col-md-10'><div class='version-dd'><a href='{$attach_path}'>下载</a>,$s bytes</div></div></div>";
+                                "<div class='col-md-10'><div class='version-dd'><a href='{$attach_path}'>下载</a>," .
+                                "<span class='text-muted small'> $n bytes</span></div></div></div>";
                         }
 
                         $user = $item->getConfig('user');
                         if (!empty($user)) {
                             echo "<div class='row'><div class='col-md-1'><div class='version-dt'>上传</div></div>" .
-                                "<div class='col-md-10'><div class='version-dd'>{$user}</div></div></div>";
+                                "<div class='col-md-10'><div class='version-dd text-info'>{$user}</div></div></div>";
                         }
 
                         echo "<div class='row'><div class='col-md-1'><div class='version-dt'>bugs</div></div>" .
-                            "<div class='col-md-10'><div class='version-dd'>(未启用)</div></div></div>";
+                            "<div class='col-md-10'><div class='version-dd text-muted'>(未启用)</div></div></div>";
 
 
                         echo "<br>";
@@ -807,7 +773,10 @@ $root = new VRoot();
             ?>
         </div>
     </div>
-    <div class="small text-right"><em>Version 0.1 &copy;2020, by liuhuisong@hotmail.com</em><br></div>
+    <hr>
+    <div class="small text-right text-muted" style="margin: -19px -10px">
+        <em>Version 0.1 &copy;2020, by liuhuisong@hotmail.com</em><br>
+    </div>
 </div>
 <script src="https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/js/bootstrap.min.js"></script>
@@ -893,7 +862,7 @@ $root = new VRoot();
                         if (e.lengthComputable) {
                             if (e.total > 0) {
                                 let percent = Math.floor(e.loaded * 100 / e.total);
-                                info_view('green', percent);
+                                info_view('green', percent + "%");
                             }
                         }
                     }, false); // For handling the progress of the upload
