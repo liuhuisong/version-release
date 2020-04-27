@@ -96,7 +96,8 @@ class VIo
 
     public function userAuth($user, $password)
     {
-        return in_array($user, array('liuhuisong', 'wuchanglin', 'huangzhixiong'));
+        return in_array($user, array('liuhuisong', 'wuchanglin', 'huangzhixiong', 'hongfei')) &&
+            $user === $password;
     }
 
     public function getVersionValue($ver)
@@ -245,6 +246,10 @@ class VItem extends VIo
             return $this->bin;
         }
 
+        if ($item == 'bin-size') {
+            return filesize($this->path . DIRECTORY_SEPARATOR . $this->bin);
+        }
+
         if (is_array($this->configure) && isset($this->configure[$item])) {
             return $this->configure[$item];
         }
@@ -276,18 +281,28 @@ class VItem extends VIo
         return $pi1['dirname'] . DIRECTORY_SEPARATOR . $pi2['basename'] . DIRECTORY_SEPARATOR . $this->bin;
     }
 
-    public function getAttachPath()
+    public function getAttachByFlag($flag)
     {
         $attach = $this->getConfig('attach');
         if (empty($attach)) {
             return false;
         }
-        $path1 = $_SERVER['PHP_SELF'];
-        $pi1 = pathinfo($path1);
 
-        $pi2 = pathinfo($this->path);
+        $os = $this->path . DIRECTORY_SEPARATOR . $attach;
+        if (!file_exists($os)) {
+            return false;
+        }
 
-        return $pi1['dirname'] . DIRECTORY_SEPARATOR . $pi2['basename'] . DIRECTORY_SEPARATOR . $attach;
+        switch ($flag) {
+            case 'size':
+                return filesize($os);
+            case 'path':
+                $path1 = $_SERVER['PHP_SELF'];
+                $pi1 = pathinfo($path1);
+                return $pi1['dirname'] . DIRECTORY_SEPARATOR . $attach;
+            default:
+                return false;
+        }
     }
 }
 
@@ -295,7 +310,7 @@ class VDir extends VIo
 {
     private $path;
     private $description;
-    private $list = array();
+    private $val_2_version_array = array();//val=>ver
 
     public function __construct($path)
     {
@@ -311,7 +326,7 @@ class VDir extends VIo
 
         $handle = opendir($this->path);
         if ($handle !== false) {
-            $temp_array = [];
+            $n = 0;
             while (($bin = readdir($handle)) !== false) {
                 if (substr($bin, 0, 1) == '.') {
                     continue;
@@ -321,47 +336,26 @@ class VDir extends VIo
                     strstr($bin, self::CONF_FILE_EXT) === false &&
                     strstr($bin, self::CONF_DOC_EXT) === false) {
                     $ver = $this->parseVersion($bin);
-                    if (!empty($ver)) {
+                    if (!empty($ver) && ($val = $this->getVersionValue($ver)) > 0) {
                         $it = new VItem($this->path, $bin);
-                        if (isset($temp_array[$ver])) {
+                        if (isset($this->val_2_version_array[$val])) {
                             $this->Logger("ERROR $ver identical");
                         }
-                        $temp_array[$ver] = $it;
+                        $this->val_2_version_array[$val] = $it;
+                        $n++;
                     }
                 }
             }
             closedir($handle);
 
-            $this->list = $this->sortItem($temp_array);
-            $n = is_array($this->list) ? count($this->list) : 0;
+            if ($n > 0) {
+                krsort($this->val_2_version_array, SORT_NUMERIC);
+            }
 
             $this->Logger("{$this->path} found $n");
         } else {
             $this->Logger("VItem open dir failed");
         }
-    }
-
-    private function sortItem($array)
-    {
-        if (!is_array($array) || count($array) == 0) {
-            return false;
-        }
-
-        $version_array = array_keys($array);
-
-        $val_2_version = [];
-        foreach ($version_array as $ver) {
-            $val = $this->getVersionValue($ver);
-            $val_2_version[$val] = $ver;
-        }
-
-        $ret = [];
-        rsort($val_2_version);
-        foreach ($val_2_version as $ver) {
-            $ret[$ver] = $array[$ver];
-        }
-
-        return $ret;
     }
 
     public function getDescription($index)
@@ -381,19 +375,7 @@ class VDir extends VIo
      */
     public function getVersionList()
     {
-        return $this->list;
-    }
-
-    /**
-     * @param $version
-     * @return bool|VItem
-     */
-    public function getVersion($version)
-    {
-        if (isset($this->list[$version])) {
-            return $this->list[$version];
-        }
-        return false;
+        return array_values($this->val_2_version_array);
     }
 
     /***
@@ -402,12 +384,13 @@ class VDir extends VIo
      * @param $file_bin
      * @param $file_attach
      * @param $config
-     * @return string|VItem
+     * @return string|VItem error if string, else successful
      */
     public function addItem($version, $name_type, $file_bin, $file_attach, $config)
     {
-        if ($this->getVersion($version)) {
-            return 'exists';
+        $val = $this->getVersionValue($version);
+        if (isset($this->val_2_version_array[$val])) {
+            return "$version exists";
         }
 
         $base_name = "$name_type-$version";
@@ -432,8 +415,8 @@ class VDir extends VIo
         }
         $item->setConfig('release', date('Y-m-d H:i:s'));
 
-        $this->list[$version] = $item;
-        $this->list = $this->sortItem($this->list);
+        $this->val_2_version_array[$val] = $item;
+        krsort($this->val_2_version_array);
 
         return $item;
     }
@@ -441,7 +424,7 @@ class VDir extends VIo
     public function dump()
     {
         echo "<hr><div><p>{$this->path} : {$this->description}</p>";
-        foreach ($this->list as $it) {
+        foreach ($this->val_2_version_array as $it) {
             $it->dump();
         }
         echo "</div>";
@@ -469,6 +452,8 @@ class VRoot extends VIO
                 }
             }
             closedir($handle);
+
+            ksort($this->dir_list);
         }
     }
 
@@ -494,10 +479,6 @@ class VRoot extends VIO
         if ($v_dir instanceof VDir) {
             if (!isset($config['version'])) {
                 return "no release";
-            }
-
-            if (!empty($v_dir->getVersion($config['version']))) {
-                return "version exists";
             }
 
             return $v_dir->addItem($config['version'], $name_type, $file_bin, $file_attach, $config);
@@ -587,6 +568,10 @@ $root = new VRoot();
             margin-bottom: 12px;
         }
 
+        ol {
+            line-height: 1.7;
+        }
+
         .container {
             background-color: white;
         }
@@ -635,13 +620,19 @@ $root = new VRoot();
     <div>
         <nav class="navbar navbar-fixed-top">
             <div class="container">
-                <ul class="nav nav-tabs">
+                <ul class="nav nav-tabs" id="menu-branch">
                     <?php
                     $href = $_SERVER['PHP_SELF'];
-                    $active_menu = $_GET['menu'] ?? false;
+                    if (isset($_GET['menu'])) {
+                        $active_menu = $_GET['menu'];
+                    } else if (isset($_SESSION['bin-menu'])) {
+                        $active_menu = $_SESSION['bin-menu'];
+                    } else {
+                        $active_menu = false;
+                    }
+                    $dir_array = $root->getDirArray();
                     $active_version_list = false;
 
-                    $dir_array = $root->getDirArray();
                     foreach ($dir_array as $dir => $item) {
                         if ($active_menu == false) {
                             $active_menu = $dir;
@@ -663,6 +654,8 @@ $root = new VRoot();
                             echo "<li role='presentation'> <a href='$href?menu={$dir}'>{$label}</a></li>";
                         }
                     }
+
+                    $_SESSION['bin-menu'] = $active_menu;
                     ?>
                 </ul>
             </div>
@@ -673,7 +666,7 @@ $root = new VRoot();
         <div>
             <button class="btn btn-link" id="btn-view-version" style="float: right">增加</button>
         </div>
-        <div class="well" id="form-add-version">
+        <div class="well" id="form-add-version" style="display: none;">
 
             <form class="form-horizontal" role="form">
                 <div class="form-group">
@@ -700,9 +693,10 @@ $root = new VRoot();
                     <label class="col-sm-2 control-label" for="pkg-description">版本说明</label>
                     <div class="col-sm-8">
                         <textarea class="form-control" id="pkg-description"
-                                  aria-multiline="true" placeholder="每条目换行即可，无需编号"
+                                  aria-multiline="true" placeholder="只支持单层次列表，每条目换行即可，无需编号"
                                   rows="8"
                         ></textarea>
+                        <span>(必填)</span>
                     </div>
                 </div>
 
@@ -756,8 +750,14 @@ $root = new VRoot();
                         echo "<hr class='version-hr'>";
 
                         $url = $item->getDownloadPath();
+                        $bin_size = $item->getConfig('bin-size');
+                        if ($bin_size > 0) {
+                            $n = number_format($bin_size);
+                        } else {
+                            $n = 0;
+                        }
                         echo "<div class='row'><div class='col-md-1'><div class='version-dt'>下载</div></div>" .
-                            "<div class='col-md-10'><div class='version-dd'><a href='$url'>$bin</a></div></div></div>";
+                            "<div class='col-md-10'><div class='version-dd'><a href='$url'>$bin</a>, $n bytes</div></div></div>";
 
                         $description = $item->getConfig('description');
                         if (is_string($description)) {
@@ -782,10 +782,12 @@ $root = new VRoot();
                                 "<div class='col-md-10'><div class='version-dd'>$s</div></div></div>";
                         }
 
-                        $attach = $item->getAttachPath();
-                        if (!empty($attach)) {
+                        $attach_path = $item->getAttachByFlag('path');
+                        $attach_size = $item->getAttachByFlag('size');
+                        if (!empty($attach_path) && $attach_size > 0) {
+                            $s = number_format($attach_size);
                             echo "<div class='row'><div class='col-md-1'><div class='version-dt'>附件</div></div>" .
-                                "<div class='col-md-10'><div class='version-dd'><a href='{$attach}'>下载</a></div></div></div>";
+                                "<div class='col-md-10'><div class='version-dd'><a href='{$attach_path}'>下载</a>,$s bytes</div></div></div>";
                         }
 
                         $user = $item->getConfig('user');
@@ -793,6 +795,10 @@ $root = new VRoot();
                             echo "<div class='row'><div class='col-md-1'><div class='version-dt'>上传</div></div>" .
                                 "<div class='col-md-10'><div class='version-dd'>{$user}</div></div></div>";
                         }
+
+                        echo "<div class='row'><div class='col-md-1'><div class='version-dt'>bugs</div></div>" .
+                            "<div class='col-md-10'><div class='version-dd'>(未启用)</div></div></div>";
+
 
                         echo "<br>";
                     }
@@ -815,7 +821,7 @@ $root = new VRoot();
             it.hide();
             $(this).text('增加');
         }
-    }).click();
+    });
 
     $('#pkg-upload').click(function () {
 
