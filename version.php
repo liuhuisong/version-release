@@ -752,7 +752,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 </div>
 
                 <div class="form-group">
-                    <label class="col-sm-2 control-label" for="pkg-user">验证</label>
+                    <label class="col-sm-2 control-label" for="pkg-user">登录验证</label>
                     <div class="col-sm-2">
                         <input type="text" class="form-control" id="pkg-user" placeholder="用户名">
                     </div>
