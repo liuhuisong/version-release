@@ -71,7 +71,7 @@ class VIo
 
     public function saveConfigure($file, $data)
     {
-        $s = ";auto save at " . date('Y-m-d H:i:s') . PHP_EOL;
+        $s = ";auto save";
         foreach ($data as $k => $v) {
             if (is_array($v)) {
                 foreach ($v as $v2) {
@@ -100,7 +100,7 @@ class VIo
             $user === $password;
     }
 
-    public function getVersionValue($ver)
+    public function version2Values($ver)
     {
         $a = preg_split("/\./", $ver);
         $n = count($a);
@@ -171,18 +171,18 @@ class VIo
 
 class VItem extends VIo
 {
-    private $path;
+    private $os_path;
     private $bin;
     private $configure;
     private $dirty = false;
 
     public function __construct($path, $bin)
     {
-        $this->path = $path;
+        $this->os_path = $path;
         $this->bin = $bin;
 
-        if (file_exists($this->path . DIRECTORY_SEPARATOR . $this->bin)) {
-            $this->configure = $this->readConfigure($this->path . DIRECTORY_SEPARATOR . $this->bin . self::CONF_FILE_EXT);
+        if (file_exists($this->os_path . DIRECTORY_SEPARATOR . $this->bin)) {
+            $this->configure = $this->readConfigure($this->os_path . DIRECTORY_SEPARATOR . $this->bin . self::CONF_FILE_EXT);
             $ver = $this->parseVersion($bin);
             $ver2 = $this->getConfig('version');
             if ($ver != $ver2) {
@@ -199,7 +199,7 @@ class VItem extends VIo
     public function __destruct()
     {
         if (!empty($this->bin) && $this->dirty) {
-            $this->saveConfigure($this->path . DIRECTORY_SEPARATOR . $this->bin . self::CONF_FILE_EXT, $this->configure);
+            $this->saveConfigure($this->os_path . DIRECTORY_SEPARATOR . $this->bin . self::CONF_FILE_EXT, $this->configure);
         }
     }
 
@@ -214,7 +214,7 @@ class VItem extends VIo
 
             case  'bin-size':
             {
-                return filesize($this->path . DIRECTORY_SEPARATOR . $this->bin);
+                return filesize($this->os_path . DIRECTORY_SEPARATOR . $this->bin);
             }
 
             default:
@@ -227,66 +227,70 @@ class VItem extends VIo
 
     public function setConfig($item, $value)
     {
-        $this->Logger("set version {$this->path}/{$this->bin}:$item");
+        $this->Logger("set version {$this->os_path}/{$this->bin}:$item");
         $this->configure[$item] = $value;
         $this->configure['last-modified'] = date('Y-m-d H:i:s');
         $this->dirty = true;
     }
 
-    public function dump()
-    {
-        echo "<dt><dl>{$this->bin}</dl>";
-        print_r(json_encode($this->configure, JSON_UNESCAPED_SLASHES));
-        echo "</dt>";
-    }
-
-    public function getDownloadPath()
+    public function getUrlPath($name)
     {
         $path1 = $_SERVER['PHP_SELF'];
         $pi1 = pathinfo($path1);
 
-        $pi2 = pathinfo($this->path);
+        $pi2 = pathinfo($this->os_path);
 
-        return $pi1['dirname'] . DIRECTORY_SEPARATOR . $pi2['basename'] . DIRECTORY_SEPARATOR . $this->bin;
+        return $pi1['dirname'] . DIRECTORY_SEPARATOR . $pi2['basename'] . DIRECTORY_SEPARATOR . $name;
     }
 
-    public function getAttachByFlag($flag)
+    public function getBinUrl()
+    {
+        return $this->getUrlPath($this->bin);
+    }
+
+    public function getAttachArray()
     {
         $attach = $this->getConfig('attach');
-        if (empty($attach)) {
+        if (is_string($attach)) {
+            return [$attach];
+        } else if (is_array($attach)) {
+            return $attach;
+        }
+        return false;
+    }
+
+    public function getAttachSize($attach_name)
+    {
+        $os_file = $this->os_path . DIRECTORY_SEPARATOR . $attach_name;
+        if (!file_exists($os_file)) {
             return false;
         }
+        return filesize($os_file);
+    }
 
-        $os = $this->path . DIRECTORY_SEPARATOR . $attach;
-        if (!file_exists($os)) {
-            return false;
-        }
-
-        switch ($flag) {
-            case 'size':
-                return filesize($os);
-            case 'path':
-                $path1 = $_SERVER['PHP_SELF'];
-                $pi1 = pathinfo($path1);
-                $pi2 = pathinfo($this->path);
-                return $pi1['dirname'] . DIRECTORY_SEPARATOR . $pi2['basename'] . DIRECTORY_SEPARATOR . $attach;
-            default:
-                return false;
-        }
+    public function dump()
+    {
+        $dump['os_path'] = $this->os_path;
+        $dump['bin'] = $this->bin;
+        $dump['configure'] = $this->configure;
+        $dump['dirty'] = $this->dirty;
+        return $dump;
     }
 }
 
 class VDir extends VIo
 {
-    private $path;
+    private $os_path;
     private $description;
     private $val_2_version_array = array();//val=>ver
 
+    private $map_item = array();
+
     public function __construct($path)
     {
-        $this->path = $path;
+        $this->os_path = $path;
 
-        $it = $this->readConfigure($this->path . DIRECTORY_SEPARATOR . self::CONF_FILE_EXT);
+        $it = $this->readConfigure($this->os_path . DIRECTORY_SEPARATOR . self::CONF_FILE_EXT);
         if (isset($it['description'])) {
             $this->description = $it['description'];
         } else {
@@ -294,7 +298,7 @@ class VDir extends VIo
             $this->description[] = $pi['basename'];
         }
 
-        $handle = opendir($this->path);
+        $handle = opendir($this->os_path);
         if ($handle !== false) {
             $n = 0;
             while (($bin = readdir($handle)) !== false) {
@@ -302,16 +306,17 @@ class VDir extends VIo
                     continue;
                 }
 
-                if (is_file($this->path . '/' . $bin) &&
+                if (is_file($this->os_path . '/' . $bin) &&
                     strstr($bin, self::CONF_FILE_EXT) === false &&
                     strstr($bin, self::CONF_DOC_EXT) === false) {
                     $ver = $this->parseVersion($bin);
-                    if (!empty($ver) && ($val = $this->getVersionValue($ver)) > 0) {
-                        $it = new VItem($this->path, $bin);
+                    if (!empty($ver) && ($val = $this->version2Values($ver)) > 0) {
+                        $it = new VItem($this->os_path, $bin);
                         if (isset($this->val_2_version_array[$val])) {
                             $this->Logger("ERROR $ver identical");
                         }
                         $this->val_2_version_array[$val] = $it;
+                        $this->map_item[$bin] = $it;
                         $n++;
                     }
                 }
@@ -322,7 +327,7 @@ class VDir extends VIo
                 krsort($this->val_2_version_array, SORT_NUMERIC);
             }
 
-            $this->Logger("{$this->path} found $n");
+            $this->Logger("{$this->os_path} found $n");
         } else {
             $this->Logger("VItem open dir failed");
         }
@@ -358,7 +363,7 @@ class VDir extends VIo
      */
     public function addItem($version, $name_type, $file_bin, $file_attach, $config)
     {
-        $val = $this->getVersionValue($version);
+        $val = $this->version2Values($version);
         if (isset($this->val_2_version_array[$val])) {
             return "$version exists";
         }
@@ -368,14 +373,14 @@ class VDir extends VIo
             $base_name .= ("-" . $config['release-ext']);
         }
 
-        $ret = $this->moveUploadFileWithExt($file_bin, $this->path, $base_name);
+        $ret = $this->moveUploadFileWithExt($file_bin, $this->os_path, $base_name);
         if (is_string($ret)) {
             return $ret;
         }
-        $item = new VItem($this->path, $base_name);
+        $item = new VItem($this->os_path, $base_name);
 
         $basename2 = $base_name . self::CONF_DOC_EXT;
-        if ($this->moveUploadFileWithExt($file_attach, $this->path, $basename2)) {
+        if ($this->moveUploadFileWithExt($file_attach, $this->os_path, $basename2)) {
             $item->setConfig('attach', $basename2);
         }
         if (is_array($config)) {
@@ -388,37 +393,55 @@ class VDir extends VIo
         $this->val_2_version_array[$val] = $item;
         krsort($this->val_2_version_array);
 
+        $this->map_item[$base_name] = $item;
+
         return $item;
+    }
+
+    /**
+     * @param $bin_name
+     * @return bool|VItem
+     */
+    public function findItemByBinName($bin_name)
+    {
+        if (isset($this->map_item[$bin_name])) {
+            return $this->map_item[$bin_name];
+        }
+
+        return false;
     }
 
     public function dump()
     {
-        echo "<hr><div><p>{$this->path} : {$this->description}</p>";
-        foreach ($this->val_2_version_array as $it) {
-            $it->dump();
+        $dump['os_path'] = $this->os_path;
+        $dump['description'] = $this->description;
+        foreach ($this->val_2_version_array as $val => $it) {
+            if ($it instanceof VItem) {
+                $dump['item-list'][$val] = $it->dump();
+            }
         }
-        echo "</div>";
+        return $dump;
     }
 }
 
 class VRoot extends VIO
 {
-    private $path;
+    private $os_path;
     private $dir_list = array();
 
     public function __construct()
     {
         $pi = pathinfo($_SERVER['SCRIPT_FILENAME']);
-        $this->path = $pi['dirname'];
+        $this->os_path = $pi['dirname'];
 
-        $handle = opendir($this->path);
+        $handle = opendir($this->os_path);
         if ($handle !== false) {
             while (($dir = readdir($handle)) !== false) {
                 if (substr($dir, 0, 1) == '.') {
                     continue;
                 }
                 if (is_dir($dir)) {
-                    $this->dir_list[$dir] = new VDir($this->path . DIRECTORY_SEPARATOR . $dir);
+                    $this->dir_list[$dir] = new VDir($this->os_path . DIRECTORY_SEPARATOR . $dir);
                 }
             }
             closedir($handle);
@@ -457,16 +480,34 @@ class VRoot extends VIO
         return 'no dir, or something is wrong';
     }
 
-    public function dump()
+    public function findItemByBinName($bin_name)
     {
-        foreach ($this->dir_list as $it) {
-            $it->dump();
+        foreach ($this->dir_list as $v_dir) {
+            if ($v_dir instanceof VDir) {
+                $item = $v_dir->findItemByBinName($bin_name);
+                if ($item !== false) {
+                    return $item;
+                }
+            }
         }
+
+        return false;
     }
 
+    public function dump()
+    {
+        $dump['os_path'] = $this->os_path;
+        foreach ($this->dir_list as $dir => $it) {
+            if ($it instanceof VDir) {
+                $dump['dir-list'][$dir] = $it->dump();
+            }
+        }
+        return $dump;
+    }
 }
 
-session_start();
+$root = new VRoot();
+
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $vio = new VIo();
 
@@ -500,11 +541,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     $document = isset($_POST['pkg-doc-url']) ? $_POST['pkg-doc-url'] : false;
 
+    $compatible = isset($_POST['pkg-compatible']) ? $_POST['pkg-compatible'] : false;
+
     if (!isset($_POST['pkg-user']) || !isset($_POST['pkg-password'])) {
         return $vio->responds('ERROR', 'no user/password');
     }
 
-    $root = new VRoot();
     if (!$root->userAuth($_POST['pkg-user'], $_POST['pkg-password'])) {
         return $vio->responds('ERROR', 'user/password error');
     }
@@ -514,12 +556,28 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             'user' => $_POST['pkg-user'],
             'version' => $version,
             'description' => $des_array,
-            'document' => $document));
+            'document' => $document,
+            'compatible' => $compatible));
 
     $vio->responds((is_string($ret) ? 'ERROR' : 'OK'), $ret);
     return;
+} else if ($_SERVER['REQUEST_METHOD'] == 'GET') {
+    if (isset($_GET['test-bin-name'])) {
+        $bin_name_array = preg_split("/[,\s]+/", $_GET['test-bin-name']);
+        foreach ($bin_name_array as $it) {
+            $v_it = $root->findItemByBinName($it);
+            if (empty($v_it)) {
+                return $root->responds('ERROR', $it);
+            }
+        }
+        return $root->responds('OK', $bin_name_array);
+    }
+
+    if (isset($_GET['dump'])) {
+        return $root->responds('DUMP', $root->dump());
+    }
 }
-$root = new VRoot();
+
 ?>
 <html lang="zh">
 <head>
@@ -574,6 +632,10 @@ $root = new VRoot();
             margin-left: -25px;
         }
 
+        .version-compatible {
+            padding: 8px 16px 8px 0;
+        }
+
         #form-add-version {
             padding: 40px 15px 20px 15px;
             width: 900px;
@@ -588,6 +650,7 @@ $root = new VRoot();
             <div class="container">
                 <ul class="nav nav-tabs" id="menu-branch">
                     <?php
+                    session_start();
                     $href = $_SERVER['PHP_SELF'];
                     if (isset($_GET['menu'])) {
                         $active_menu = $_GET['menu'];
@@ -681,6 +744,14 @@ $root = new VRoot();
                 </div>
 
                 <div class="form-group">
+                    <label class="col-sm-2 control-label" for="pkg-compatible">兼容其他的版本</label>
+                    <div class="col-sm-8">
+                        <input type="text" class="form-control" id="pkg-compatible" placeholder="兼容相关版本，用空格或者逗号分隔">
+                        <span class="text-danger" id="pkg-compatible-info"></span>
+                    </div>
+                </div>
+
+                <div class="form-group">
                     <label class="col-sm-2 control-label" for="pkg-user">验证</label>
                     <div class="col-sm-2">
                         <input type="text" class="form-control" id="pkg-user" placeholder="用户名">
@@ -715,7 +786,7 @@ $root = new VRoot();
                         echo "<div><div class='version-title'>$version</div><div class='text-right'>$release</div></div>";
                         echo "<hr class='version-hr'>";
 
-                        $url = $item->getDownloadPath();
+                        $url = $item->getBinUrl();
                         $bin_size = $item->getConfig('bin-size');
                         if (!empty($url) && $bin_size > 0) {
                             $n = number_format($bin_size);
@@ -747,13 +818,41 @@ $root = new VRoot();
                                 "<div class='col-md-10'><div class='version-dd'>$s</div></div></div>";
                         }
 
-                        $attach_path = $item->getAttachByFlag('path');
-                        $attach_size = $item->getAttachByFlag('size');
-                        if (!empty($attach_path) && $attach_size > 0) {
-                            $n = number_format($attach_size);
+                        $attach_array = $item->getAttachArray();
+                        if (!empty($attach_array)) {
                             echo "<div class='row'><div class='col-md-1'><div class='version-dt'>附件</div></div>" .
-                                "<div class='col-md-10'><div class='version-dd'><a href='{$attach_path}'>下载</a>," .
-                                "<span class='text-muted small'> $n bytes</span></div></div></div>";
+                                "<div class='col-md-10'><div class='version-dd'>";
+
+                            foreach ($attach_array as $attach_name) {
+                                $url = $item->getUrlPath($attach_name);
+                                $n = $item->getAttachSize($attach_name);
+                                if (!$n) {
+                                    $s = "not found";
+                                } else {
+                                    $s = "$n bytes";
+                                }
+                                echo "<a href='{$url}'>$attach_name</a> (" .
+                                    "<span class='text-muted small'>$s</span>),";
+                            }
+
+                            echo "</div></div></div>";
+                        }
+
+                        $compatible = $item->getConfig('compatible');
+                        if (!empty($compatible)) {
+                            echo "<div class='row'><div class='col-md-1'><div class='version-dt'>兼容</div></div>" .
+                                "<div class='col-md-10'><div class='version-dd'>";
+                            $com_array = preg_split("/[,\s]+/", $compatible);
+                            foreach ($com_array as $it) {
+                                $v_it = $root->findItemByBinName($it);
+                                if ($v_it instanceof VItem) {
+                                    $url = $v_it->getBinUrl();
+                                    echo "<a href='$url' class='version-compatible'>$it</a>";
+                                } else {
+                                    echo "<span class='version-compatible'>$it</span>";
+                                }
+                            }
+                            echo "</div></div></div>";
                         }
 
                         $user = $item->getConfig('user');
@@ -775,7 +874,7 @@ $root = new VRoot();
     </div>
     <hr>
     <div class="small text-right text-muted" style="margin: -19px -10px">
-        <em>Version 0.1 &copy;2020, by liuhuisong@hotmail.com</em><br>
+        <em>Version 0.1.1 &copy;2020, by liuhuisong@hotmail.com</em><br>
     </div>
 </div>
 <script src="https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
@@ -789,6 +888,20 @@ $root = new VRoot();
         } else {
             it.hide();
             $(this).text('增加');
+        }
+    });
+
+    $('#pkg-compatible').change(function () {
+        let names = $(this).val();
+        let info = $('#pkg-compatible-info').empty();
+        if (names) {
+            $.get(<?php echo "\"{$_SERVER['SCRIPT_NAME']}\"";?>, {
+                'test-bin-name': names
+            }, function (r) {
+                if (r.error === 'ERROR') {
+                    info.text(r.value + " not exists");
+                }
+            });
         }
     });
 
@@ -828,6 +941,8 @@ $root = new VRoot();
 
 
         form_data.append('pkg-doc-url', $('#pkg-doc-url').val());
+
+        form_data.append('pkg-compatible', $('#pkg-compatible').val());
 
         let fc2 = $('#pkg-file-attach');
         let val2 = fc2.val();
