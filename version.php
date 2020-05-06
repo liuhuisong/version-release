@@ -6,6 +6,7 @@ if (PHP_OS == 'Linux') {
     define('LOG_PATH', 'c:\\temp\\version');
 }
 define('LOG_MAX_SIZE', 4096);
+define('VERSION', '0.1.2');
 
 class VIo
 {
@@ -128,10 +129,10 @@ class VIo
     /***
      * @param $file
      * @param $path
-     * @param $filename
-     * @return bool|false|string
+     * @param $basename
+     * @return true|string
      */
-    public function moveUploadFileWithExt($file, $path, &$filename)
+    public function moveUploadFileWithExt($file, $path, &$basename)
     {
         if (!is_array($file)) {
             return $this->Logger('file not array');
@@ -155,7 +156,7 @@ class VIo
             return $this->Logger('no file extension');
         }
 
-        $dest = $path . DIRECTORY_SEPARATOR . "$filename.$ext";
+        $dest = $path . DIRECTORY_SEPARATOR . "$basename.$ext";
         if (file_exists($dest)) {
             return $this->Logger("$dest exists already");
         }
@@ -164,7 +165,7 @@ class VIo
             return $this->Logger("move file $dest failed");
         }
 
-        $filename .= ".$ext";
+        $basename .= ".$ext";
         return true;
     }
 }
@@ -239,7 +240,6 @@ class VItem extends VIo
         $pi1 = pathinfo($path1);
 
         $pi2 = pathinfo($this->os_path);
-
         return $pi1['dirname'] . DIRECTORY_SEPARATOR . $pi2['basename'] . DIRECTORY_SEPARATOR . $name;
     }
 
@@ -380,7 +380,7 @@ class VDir extends VIo
         $item = new VItem($this->os_path, $base_name);
 
         $basename2 = $base_name . self::CONF_DOC_EXT;
-        if ($this->moveUploadFileWithExt($file_attach, $this->os_path, $basename2)) {
+        if ($this->moveUploadFileWithExt($file_attach, $this->os_path, $basename2) === true) {
             $item->setConfig('attach', $basename2);
         }
         if (is_array($config)) {
@@ -551,7 +551,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         return $vio->responds('ERROR', 'user/password error');
     }
 
-    $ret = $root->addItemByName($name_type, $_FILES['pkg-file-bin'], $_FILES['pkg-file-attach' ?? false],
+
+    $ret = $root->addItemByName($name_type, $_FILES['pkg-file-bin'],
+        (isset($_FILES['pkg-file-attach']) ? $_FILES['pkg-file-attach'] : false),
         array(
             'user' => $_POST['pkg-user'],
             'version' => $version,
@@ -618,6 +620,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             font-weight: 200;
             font-style: italic;
             color: gray;
+            text-align: right;
         }
 
         .version-hr {
@@ -640,6 +643,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             padding: 40px 15px 20px 15px;
             width: 900px;
             margin-left: 15px;
+        }
+
+        .qr-code {
+            height: 96px;
+            width: 96px;
         }
     </style>
 </head>
@@ -744,9 +752,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 </div>
 
                 <div class="form-group">
-                    <label class="col-sm-2 control-label" for="pkg-compatible">兼容其他的版本</label>
+                    <label class="col-sm-2 control-label" for="pkg-compatible">依赖</label>
                     <div class="col-sm-8">
-                        <input type="text" class="form-control" id="pkg-compatible" placeholder="兼容相关版本，用空格或者逗号分隔">
+                        <input type="text" class="form-control" id="pkg-compatible"
+                               placeholder="软件包完整名称，多个名称可用空格或者逗号分隔">
                         <span class="text-danger" id="pkg-compatible-info"></span>
                     </div>
                 </div>
@@ -760,7 +769,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         <input type="password" class="form-control" id="pkg-password" placeholder="密码">
                     </div>
                 </div>
-
                 <hr>
                 <div class="col-sm-offset-2 col-sm-6">
                     <div class="btn btn-default" id="pkg-upload"><span class="glyphicon glyphicon-save"></span>
@@ -769,6 +777,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     <div id="upload-info"></div>
                 </div>
                 <br><br>
+                <?php
+                function formatNum($bytes)
+                {
+                    $si_prefix = array('B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB');
+                    $base = 1024;
+                    $class = min((int)log($bytes, $base), count($si_prefix) - 1);
+
+                    return sprintf('%1.2f', $bytes / pow($base, $class)) . ' ' . $si_prefix[$class];
+                }
+
+                $dt = disk_total_space("/");
+                $dts = formatNum($dt);
+                $df = disk_free_space("/");
+                $dfs = formatNum($df);
+                $dfp = sprintf("%.1f", ($dt - $df) * 100 / $dt);
+                echo "<div>Total: $dts , Free: $dfs ,  used: $dfp% </div>";
+                ?>
             </form>
         </div>
     </div>
@@ -791,8 +816,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         if (!empty($url) && $bin_size > 0) {
                             $n = number_format($bin_size);
                             echo "<div class='row'><div class='col-md-1'><div class='version-dt'>下载</div></div>" .
-                                "<div class='col-md-10'><div class='version-dd'><a href='$url'>$bin</a>, " .
-                                "<span class='text-muted small'> $n bytes</span></div></div></div>";
+                                "<div class='col-md-9'><div class='version-dd'><a href='$url'>$bin</a>, " .
+                                "<div class='text-muted small'> $n bytes</div></div></div>";
+
+                            echo "<div class='col-md-2'>";
+                            if (substr($url, -4) == '.apk') {
+                                $s = "http://" . $_SERVER['HTTP_HOST'] . $url;
+                                if(PHP_OS=='WINNT') {
+                                    $s = str_replace("\\", "/", $s);
+                                }
+                                echo "<img class='qr-code' src='http://qr.topscan.com/api.php?text=$s' alt='qr code' title='$s'/>";
+                            }
+                            echo "</div>";
+
+                            echo "</div>";
                         }
 
                         $description = $item->getConfig('description');
@@ -826,13 +863,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                             foreach ($attach_array as $attach_name) {
                                 $url = $item->getUrlPath($attach_name);
                                 $n = $item->getAttachSize($attach_name);
-                                if (!$n) {
-                                    $s = "not found";
+                                if ($n === false) {
+                                    echo "<span>$attach_name</span> (" .
+                                        "<span class='text-muted small'> not found</span>),";
                                 } else {
-                                    $s = "$n bytes";
+                                    echo "<a href='{$url}'>$attach_name</a> (" .
+                                        "<span class='text-muted small'>$n bytes</span>),";
                                 }
-                                echo "<a href='{$url}'>$attach_name</a> (" .
-                                    "<span class='text-muted small'>$s</span>),";
+
                             }
 
                             echo "</div></div></div>";
@@ -840,7 +878,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
                         $compatible = $item->getConfig('compatible');
                         if (!empty($compatible)) {
-                            echo "<div class='row'><div class='col-md-1'><div class='version-dt'>兼容</div></div>" .
+                            echo "<div class='row'><div class='col-md-1'><div class='version-dt'>依赖</div></div>" .
                                 "<div class='col-md-10'><div class='version-dd'>";
                             $com_array = preg_split("/[,\s]+/", $compatible);
                             foreach ($com_array as $it) {
@@ -858,11 +896,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         $user = $item->getConfig('user');
                         if (!empty($user)) {
                             echo "<div class='row'><div class='col-md-1'><div class='version-dt'>上传</div></div>" .
-                                "<div class='col-md-10'><div class='version-dd text-info'>{$user}</div></div></div>";
+                                "<div class='col-md-10'>" .
+                                "<span class='version-dd text-info'>" .
+                                "<span class='glyphicon glyphicon-user'></span>&nbsp;{$user}" .
+                                "</span></div></div>";
                         }
 
                         echo "<div class='row'><div class='col-md-1'><div class='version-dt'>bugs</div></div>" .
-                            "<div class='col-md-10'><div class='version-dd text-muted'>(未启用)</div></div></div>";
+                            "<div class='col-md-10'><div class='version-dd text-muted'></div></div></div>";
 
 
                         echo "<br>";
@@ -874,7 +915,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     </div>
     <hr>
     <div class="small text-right text-muted" style="margin: -19px -10px">
-        <em>Version 0.1.1 &copy;2020, by liuhuisong@hotmail.com</em><br>
+        <em>Version <?php echo VERSION; ?> &copy;2020, by liuhuisong@hotmail.com</em><br>
     </div>
 </div>
 <script src="https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
@@ -991,7 +1032,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             data: form_data,
             success: function (r2) {
                 if (r2.error === 'OK') {
-                    info_view('darkgreen', '成功,需要刷新页面');
+                    info_view('darkgreen', '成功...');
                     location.reload();
                 } else {
                     info_view('darkred', r2.value);
