@@ -822,7 +822,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                             echo "<div class='col-md-2'>";
                             if (substr($url, -4) == '.apk') {
                                 $s = "http://" . $_SERVER['HTTP_HOST'] . $url;
-                                if(PHP_OS=='WINNT') {
+                                if (PHP_OS == 'WINNT') {
                                     $s = str_replace("\\", "/", $s);
                                 }
                                 echo "<img class='qr-code' src='http://qr.topscan.com/api.php?text=$s' alt='qr code' title='$s'/>";
@@ -909,6 +909,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         echo "<br>";
                     }
                 }
+            } else {
+                echo "<div>no any version here</div>";
             }
             ?>
         </div>
