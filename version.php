@@ -916,8 +916,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         </div>
     </div>
     <hr>
-    <div class="small text-right text-muted" style="margin: -19px -10px">
-        <em>Version <?php echo VERSION; ?> &copy;2020, by liuhuisong@hotmail.com</em><br>
+    <div class="small text-right text-muted">
+        <em>Version Release <?php echo VERSION; ?>, Apache License 2.0</em><br>
+        <em>by liuhuisong@hotmail.com</em><br>
     </div>
 </div>
 <script src="https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
