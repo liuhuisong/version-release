@@ -9,6 +9,10 @@ if (PHP_OS == 'Linux') {
 define('LOG_MAX_SIZE', 4096);
 define('VERSION', '0.1.2');
 
+/***
+ * Class VIo
+ * IO, and Logger
+ */
 class VIo
 {
     const CONF_FILE_EXT = '.__version';
@@ -50,6 +54,11 @@ class VIo
         return $msg_string;
     }
 
+    /**
+     * @param $file
+     * @return array|bool|false
+     *
+     */
     public function readConfigure($file)
     {
         $lines = @parse_ini_file($file);
@@ -61,6 +70,11 @@ class VIo
         return $lines;
     }
 
+    /**
+     * @param $filename
+     * @return bool|false|string
+     * get created time of the file
+     */
     public function getFileCTime($filename)
     {
         $stamp = @filectime($filename);
@@ -71,6 +85,11 @@ class VIo
         return date("Y-m-d H:i:s", $stamp);
     }
 
+    /**
+     * @param $file
+     * @param $data
+     * save configure to file
+     */
     public function saveConfigure($file, $data)
     {
         $s = ";auto save";
@@ -89,6 +108,12 @@ class VIo
         @file_put_contents($file, $s);
     }
 
+    /**
+     * @param $error
+     * @param $value
+     * @return string
+     * return OK,ERROR, or else
+     */
     public function responds($error, $value)
     {
         header('Content-Type: application/json; charset=utf-8');
@@ -96,12 +121,23 @@ class VIo
         return $error;
     }
 
+    /**
+     * @param $user
+     * @param $password
+     * @return bool
+     * TODO: user auth hook
+     */
     public function userAuth($user, $password)
     {
         return in_array($user, array('liuhuisong', 'wuchanglin', 'huangzhixiong', 'hongfei')) &&
             $user === $password;
     }
 
+    /**
+     * @param $ver
+     * @return int
+     * for version sort
+     */
     public function version2Values($ver)
     {
         $a = preg_split("/\./", $ver);
@@ -117,6 +153,12 @@ class VIo
         return $val;
     }
 
+    /**
+     * @param $bin
+     * @return bool| string
+     *
+     * version a.b[.c[.d]], a,b,c,d <255
+     */
     public function parseVersion($bin)
     {
         preg_match('/(\d+\.){1,3}\d+/', $bin, $match_array);

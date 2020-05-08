@@ -4,11 +4,18 @@ require_once 'VIo.php';
 require_once 'VItem.php';
 require_once 'VDir.php';
 
+/**
+ * Class VRoot
+ * the version ROOT object
+ */
 class VRoot extends VIO
 {
     private $os_path;
     private $dir_list = array();
 
+    /**
+     * VRoot constructor.
+     */
     public function __construct()
     {
         $pi = pathinfo($_SERVER['SCRIPT_FILENAME']);
@@ -30,6 +37,10 @@ class VRoot extends VIO
         }
     }
 
+    /**
+     * @return array
+     * project dir array
+     */
     public function getDirArray()
     {
         return $this->dir_list;
@@ -41,6 +52,7 @@ class VRoot extends VIO
      * @param $file_attach
      * @param $config
      * @return bool|string
+     * used by add version item
      */
     public function addItemByName($name_type, $file_bin, $file_attach, $config)
     {
@@ -60,6 +72,11 @@ class VRoot extends VIO
         return 'no dir, or something is wrong';
     }
 
+    /**
+     * @param $bin_name
+     * @return bool|VItem
+     * location version item by bin name, it may be high cost
+     */
     public function findItemByBinName($bin_name)
     {
         foreach ($this->dir_list as $v_dir) {
@@ -74,6 +91,10 @@ class VRoot extends VIO
         return false;
     }
 
+    /**
+     * @return mixed
+     * for test
+     */
     public function dump()
     {
         $dump['os_path'] = $this->os_path;

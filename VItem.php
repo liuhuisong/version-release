@@ -2,6 +2,10 @@
 
 require_once 'VIo.php';
 
+/**
+ * Class VItem
+ * present a version ITEM, include some property
+ */
 class VItem extends VIo
 {
     private $os_path;
@@ -9,6 +13,12 @@ class VItem extends VIo
     private $configure;
     private $dirty = false;
 
+    /**
+     * VItem constructor.
+     * @param $path
+     * @param $bin
+     * init a Version ITEM, from path and file(bin)
+     */
     public function __construct($path, $bin)
     {
         $this->os_path = $path;
@@ -29,6 +39,9 @@ class VItem extends VIo
         }
     }
 
+    /**
+     * save configure if necessary
+     */
     public function __destruct()
     {
         if (!empty($this->bin) && $this->dirty) {
@@ -37,6 +50,11 @@ class VItem extends VIo
     }
 
 
+    /**
+     * @param $item
+     * @return bool|false|int|mixed
+     * get property of the version item
+     */
     public function getConfig($item)
     {
         switch ($item) {
@@ -58,6 +76,11 @@ class VItem extends VIo
         }
     }
 
+    /**
+     * @param $item
+     * @param $value
+     * set property of the version item
+     */
     public function setConfig($item, $value)
     {
         $this->Logger("set version {$this->os_path}/{$this->bin}:$item");
@@ -66,6 +89,11 @@ class VItem extends VIo
         $this->dirty = true;
     }
 
+    /**
+     * @param $name
+     * @return string
+     * get path of the download URL
+     */
     public function getUrlPath($name)
     {
         $path1 = $_SERVER['PHP_SELF'];
@@ -75,11 +103,20 @@ class VItem extends VIo
         return $pi1['dirname'] . DIRECTORY_SEPARATOR . $pi2['basename'] . DIRECTORY_SEPARATOR . $name;
     }
 
+    /**
+     * @return string
+     * get version URL
+     */
     public function getBinUrl()
     {
         return $this->getUrlPath($this->bin);
     }
 
+    /**
+     * @return bool| array
+     *
+     * get this version attach, it is a array, maybe empty
+     */
     public function getAttachArray()
     {
         $attach = $this->getConfig('attach');
@@ -91,6 +128,12 @@ class VItem extends VIo
         return false;
     }
 
+    /**
+     * @param $attach_name
+     * @return false|int
+     *
+     * get attach size by the name
+     */
     public function getAttachSize($attach_name)
     {
         $os_file = $this->os_path . DIRECTORY_SEPARATOR . $attach_name;
@@ -100,6 +143,10 @@ class VItem extends VIo
         return filesize($os_file);
     }
 
+    /**
+     * @return mixed
+     * test
+     */
     public function dump()
     {
         $dump['os_path'] = $this->os_path;
