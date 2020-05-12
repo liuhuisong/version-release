@@ -23,6 +23,29 @@ class VDir extends VIo
             $this->description[] = $pi['basename'];
         }
 
+        if (isset($it['ext'])) {
+            if (is_string($it['ext'])) {
+                $ext_list = [];
+                $a = explode(",", $it['ext']);
+                foreach ($a as $it) {
+                    if (is_string($it) && !empty(($it2 = trim($it)))) {
+                        $ext_list[] = $it2;
+                    }
+                }
+            } else if (is_array($it['ext'])) {
+                $ext_list = [];
+                foreach ($it['ext'] as $it) {
+                    if (is_string($it) && !empty(($it2 = trim($it)))) {
+                        $ext_list[] = $it2;
+                    }
+                }
+            }
+        }
+
+        if (empty($ext_list)) {
+            $ext_list = CONF_PKG_DEF_EXT;
+        }
+
         $handle = opendir($this->os_path);
         if ($handle !== false) {
             $n = 0;
@@ -31,7 +54,14 @@ class VDir extends VIo
                     continue;
                 }
 
-                if (substr($bin, -4) == '.php') {
+                //filter by ext
+                $a = explode(".", $bin);
+                if (empty($a)) {
+                    continue;
+                }
+
+                $ext_name = end($a);
+                if (!in_array($ext_name, $ext_list)) {
                     continue;
                 }
 
@@ -62,7 +92,8 @@ class VDir extends VIo
         }
     }
 
-    public function getDescription($index)
+    public
+    function getDescription($index)
     {
         if (is_array($this->description)) {
             if (!!is_numeric($index) || $index < 0 || $index > count($this->description) - 1) {
@@ -77,7 +108,8 @@ class VDir extends VIo
     /**
      * @return VItem[]
      */
-    public function getVersionList()
+    public
+    function getVersionList()
     {
         return array_values($this->val_2_version_array);
     }
@@ -90,7 +122,8 @@ class VDir extends VIo
      * @param $config
      * @return string|VItem error if string, else successful
      */
-    public function addItem($version, $name_type, $file_bin, $file_attach, $config)
+    public
+    function addItem($version, $name_type, $file_bin, $file_attach, $config)
     {
         $val = $this->version2Values($version);
         if (isset($this->val_2_version_array[$val])) {
@@ -131,7 +164,8 @@ class VDir extends VIo
      * @param $bin_name
      * @return bool|VItem
      */
-    public function findItemByBinName($bin_name)
+    public
+    function findItemByBinName($bin_name)
     {
         if (isset($this->map_item[$bin_name])) {
             return $this->map_item[$bin_name];
@@ -140,7 +174,8 @@ class VDir extends VIo
         return false;
     }
 
-    public function dump()
+    public
+    function dump()
     {
         $dump['os_path'] = $this->os_path;
         $dump['description'] = $this->description;

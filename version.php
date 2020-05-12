@@ -46,10 +46,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         return $vio->responds('ERROR', 'no user/password');
     }
 
-    if (!$root->userAuth($_POST['pkg-user'], $_POST['pkg-password'])) {
+    $user = $_POST['pkg-user'];
+    $password = $_POST['pkg-password'];
+
+    if (!in_array($user, array('liuhuisong', 'wuchanglin', 'huangzhixiong', 'hongfei')) ||
+        $user !== $password) {
         return $vio->responds('ERROR', 'user/password error');
     }
-
 
     $ret = $root->addItemByName($name_type, $_FILES['pkg-file-bin'],
         (isset($_FILES['pkg-file-attach']) ? $_FILES['pkg-file-attach'] : false),

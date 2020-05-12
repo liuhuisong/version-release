@@ -21,6 +21,13 @@ class VRoot extends VIO
         $pi = pathinfo($_SERVER['SCRIPT_FILENAME']);
         $this->os_path = $pi['dirname'];
 
+        $this->loadDirectory();
+    }
+
+    public function loadDirectory()
+    {
+        $this->dir_list=array();//init
+
         $handle = opendir($this->os_path);
         if ($handle !== false) {
             while (($dir = readdir($handle)) !== false) {

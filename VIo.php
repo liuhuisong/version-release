@@ -1,13 +1,6 @@
 <?php
 
-
-if (PHP_OS == 'Linux') {
-    define('LOG_PATH', '/var/log/version');
-} else {
-    define('LOG_PATH', 'c:\\temp\\version');
-}
-define('LOG_MAX_SIZE', 4096);
-define('VERSION', '0.1.2');
+require_once 'v_def.php';
 
 /***
  * Class VIo
@@ -119,18 +112,6 @@ class VIo
         header('Content-Type: application/json; charset=utf-8');
         echo json_encode(array('error' => $error, 'value' => $value));
         return $error;
-    }
-
-    /**
-     * @param $user
-     * @param $password
-     * @return bool
-     * TODO: user auth hook
-     */
-    public function userAuth($user, $password)
-    {
-        return in_array($user, array('liuhuisong', 'wuchanglin', 'huangzhixiong', 'hongfei')) &&
-            $user === $password;
     }
 
     /**
