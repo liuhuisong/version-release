@@ -240,9 +240,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 </div>
 
                 <div class="form-group">
-                    <label class="col-sm-2 control-label" for="pkg-doc-url">文档链接</label>
+                    <label class="col-sm-2 control-label" for="pkg-doc-url">文档</label>
                     <div class="col-sm-8">
-                        <input type="url" class="form-control" id="pkg-doc-url" placeholder="文档的URL">
+                        <input type="url" class="form-control" id="pkg-doc-url" placeholder="document url">
                     </div>
                 </div>
 

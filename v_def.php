@@ -10,4 +10,4 @@ if (PHP_OS == 'Linux') {
 }
 
 //you can set your filter in configure/ext in every directory
-define('CONF_PKG_DEF_EXT', ['zip', 'tar', 'b2z', 'apk', 'exe', 'iso','img','tgz']);
+define('CONF_PKG_DEF_EXT', ['zip', 'tar', 'bz2', 'apk', 'exe', 'iso','img','tgz','gz','z']);
