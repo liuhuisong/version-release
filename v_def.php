@@ -1,5 +1,5 @@
 <?php
-define('VERSION', '0.1.3');
+define('VERSION', '0.1.3.1');
 
 //log
 define('LOG_MAX_SIZE', 4096);
@@ -10,4 +10,4 @@ if (PHP_OS == 'Linux') {
 }
 
 //you can set your filter in configure/ext in every directory
-define('CONF_PKG_DEF_EXT', ['zip', 'tar', 'bz2', 'apk', 'exe', 'iso','img','tgz','gz','z']);
+define('CONF_PKG_DEF_EXT', ['zip', 'bz2', 'gz', 'Z', 'xz', 'tar', 'tgz', 'apk', 'exe', 'iso', 'img']);
