@@ -36,6 +36,11 @@ class VItem extends VIo
                 $release = $this->getFileCTime($path . DIRECTORY_SEPARATOR . $bin);
                 $this->setConfig('release', $release);
             }
+
+            if (empty($this->getConfig('md5'))) {
+                $md5 = md5_file($this->os_path . DIRECTORY_SEPARATOR . $this->bin);
+                $this->setConfig('md5', $md5);
+            }
         }
     }
 
