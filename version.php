@@ -315,11 +315,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
                         $url = $item->getBinUrl();
                         $bin_size = $item->getConfig('bin-size');
+                        $md5 = $item->getConfig('md5');
+
                         if (!empty($url) && $bin_size > 0) {
                             $n = number_format($bin_size);
                             echo "<div class='row'><div class='col-md-1'><div class='version-dt'>下载</div></div>" .
                                 "<div class='col-md-9'><div class='version-dd'><a href='$url'>$bin</a>, " .
-                                "<div class='text-muted small'> $n bytes</div></div></div>";
+                                "<div class='text-muted small'> $n bytes, MD5:" . $md5 . "</div></div></div>";
 
                             echo "<div class='col-md-2'>";
                             if (substr($url, -4) == '.apk') {
