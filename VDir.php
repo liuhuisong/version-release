@@ -64,7 +64,6 @@ class VDir extends VIo
                 if (!in_array($ext_name, $ext_list)) {
                     continue;
                 }
-
                 if (is_file($this->os_path . '/' . $bin) &&
                     strstr($bin, self::CONF_FILE_EXT) === false &&
                     strstr($bin, self::CONF_DOC_EXT) === false) {

@@ -175,6 +175,12 @@ class VIo
         if (isset($file['name'])) {
             $array = explode(".", $file['name']);
             $ext = strtolower(end($array));
+            if (($n = count($array)) > 2) {
+                $ext2 = strtolower($array[$n - 2]);
+                if (in_array($ext2, CONF_PKG_DEF_EXT)) {
+                    $ext = $ext2 . '.' . $ext;
+                }
+            }
         }
         if (empty($ext)) {
             return $this->Logger('no file extension');
