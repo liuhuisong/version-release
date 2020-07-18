@@ -1,5 +1,5 @@
 <?php
-define('VERSION', '0.1.3.1');
+define('VERSION', '0.1.3.2');
 
 //log
 define('LOG_MAX_SIZE', 4096);
