@@ -9,7 +9,11 @@ class VDir extends VIo
     private $description;
     private $val_2_version_array = array();//val=>ver
 
+    //for find bin with version, prevent from conflict
     private $map_item = array();
+
+    //for user can post bin
+    private $user_list;
 
     public function __construct($path)
     {
@@ -21,6 +25,15 @@ class VDir extends VIo
         } else {
             $pi = pathinfo($path);
             $this->description[] = $pi['basename'];
+        }
+
+        $this->user_list = false;
+        if (isset($it['user'])) {
+            if (is_array($it['user'])) {
+                $this->user_list = $it['user'];
+            } else if (is_string($it['user'])) {
+                $this->user_list = preg_split("/[\s,;:]/", $it['user']);
+            }
         }
 
         if (isset($it['ext'])) {
@@ -113,6 +126,12 @@ class VDir extends VIo
         return array_values($this->val_2_version_array);
     }
 
+    public
+    function hasUser($user)
+    {
+        return is_array($this->user_list) && in_array($user, $this->user_list);
+    }
+
     /***
      * @param $version
      * @param $name_type
@@ -124,6 +143,10 @@ class VDir extends VIo
     public
     function addItem($version, $name_type, $file_bin, $file_attach, $config)
     {
+        if (!isset($config['user']) || $this->hasUser($config['user'])) {
+            return "user denied for $name_type";
+        }
+
         $val = $this->version2Values($version);
         if (isset($this->val_2_version_array[$val])) {
             return "$version exists";

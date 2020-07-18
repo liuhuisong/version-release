@@ -13,6 +13,8 @@ class VRoot extends VIO
     private $os_path;
     private $dir_list = array();
 
+    private $config;
+
     /**
      * VRoot constructor.
      */
@@ -21,12 +23,14 @@ class VRoot extends VIO
         $pi = pathinfo($_SERVER['SCRIPT_FILENAME']);
         $this->os_path = $pi['dirname'];
 
+        $this->config = $this->readConfigure($this->os_path . DIRECTORY_SEPARATOR . self::CONF_FILE_EXT);
+
         $this->loadDirectory();
     }
 
     public function loadDirectory()
     {
-        $this->dir_list=array();//init
+        $this->dir_list = array();//init
 
         $handle = opendir($this->os_path);
         if ($handle !== false) {
@@ -93,6 +97,27 @@ class VRoot extends VIO
                     return $item;
                 }
             }
+        }
+
+        return false;
+    }
+
+    public function getConfig($name)
+    {
+        if (isset($this->config[$name])) {
+            return $this->config[$name];
+        }
+
+        return false;
+    }
+
+    public function onUserAuth($user, $password)
+    {
+        $user_list = $this->getConfig('user');
+        if (is_array($user_list)) {
+            $passwd = md5($password);
+            $s = "$user:$passwd";
+            return in_array($s, $user_list);
         }
 
         return false;

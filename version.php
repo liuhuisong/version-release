@@ -49,8 +49,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $user = $_POST['pkg-user'];
     $password = $_POST['pkg-password'];
 
-    if (!in_array($user, array('liuhuisong', 'wuchanglin', 'huangzhixiong', 'hongfei')) ||
-        $user !== $password) {
+//    if (!in_array($user, array('liuhuisong', 'wuchanglin', 'huangzhixiong', 'hongfei')) ||
+//        $user !== $password) {
+//        return $vio->responds('ERROR', 'user/password error');
+//    }
+    if($root->onUserAuth($user,$password)){
         return $vio->responds('ERROR', 'user/password error');
     }
 
