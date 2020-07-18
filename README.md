@@ -2,7 +2,7 @@
 a Simple package version manager for version release, support multiple project, and multiple user, and every user can post special project
 # install
 - copy version.php to your any directory of your http server
-- need rwx for web user group, eg. www-data in apache2
+- need rwx for web user group, eg. www-data in apache2, allow www-data has write bitmask to thsi directory
 - support php 7.x
 - open this URL in your web browse,  http://host/to/path/version.php
 
