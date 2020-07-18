@@ -1,7 +1,7 @@
 {
   "name": "liuhuisong/version-release",
   "description": "manager software package, and version id, description",
-  "minimum-stability": "0.1.3.1",
+  "minimum-stability": "^dev",
   "license": "Apache-2.0",
   "authors": [
     {
