@@ -5,7 +5,7 @@ a Simple package version manager for version release, support multiple project, 
 - need rwx for web user group, eg. www-data in apache2, allow www-data has write bitmask to thsi directory
 - support php 7.x
 - open this URL in your web browse,  http://host/to/path/version.php
-
+# debug
 any bugs to liuhuisong@hotmail.com
 
 # configure
