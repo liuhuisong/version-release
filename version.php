@@ -53,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 //        $user !== $password) {
 //        return $vio->responds('ERROR', 'user/password error');
 //    }
-    if($root->onUserAuth($user,$password)){
+    if ($root->onUserAuth($user, $password)) {
         return $vio->responds('ERROR', 'user/password error');
     }
 
@@ -323,8 +323,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         if (!empty($url) && $bin_size > 0) {
                             $n = number_format($bin_size);
                             echo "<div class='row'><div class='col-md-1'><div class='version-dt'>下载</div></div>" .
-                                "<div class='col-md-9'><div class='version-dd'><a href='$url'>$bin</a>, " .
-                                "<div class='text-muted small'> $n bytes, MD5:" . $md5 . "</div></div></div>";
+                                "<div class='col-md-9'><div class='version-dd'><a href='$url'>$bin</a>" .
+                                "<div class='text-muted small'>Size : $n bytes</div>" .
+                                "<div class='text-muted small'>MD5  : " . $md5 . "</div></div></div>";
 
                             echo "<div class='col-md-2'>";
                             if (substr($url, -4) == '.apk') {
