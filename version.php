@@ -158,7 +158,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 </head>
 <body>
 <div class="container">
-    <div>
+    <div id="menu-bar">
         <nav class="navbar navbar-fixed-top">
             <div class="container">
                 <ul class="nav nav-tabs" id="menu-branch">
@@ -203,10 +203,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             </div>
         </nav>
     </div>
-    <div class="row">
-        <br><br><br><br><br>
+    <div class="row" id="menu-container">
         <div>
-            <button class="btn btn-link" id="btn-view-version" style="float: right">增加</button>
+            <button class="btn btn-link" id="btn-view-version" style="float: right;margin-right: 8px">增加</button>
         </div>
         <div class="well" id="form-add-version" style="display: none;">
 
@@ -432,6 +431,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <script src="https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/js/bootstrap.min.js"></script>
 <script>
+    let h=$('#menu-bar>nav').outerHeight();
+    $('#menu-container').css('margin-top',h);
+
     $('#btn-view-version').click(function () {
         let it = $('#form-add-version');
         if (it.css('display') === 'none') {
