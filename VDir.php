@@ -67,6 +67,10 @@ class VDir extends VIo
                     continue;
                 }
 
+                if (strstr($bin, self::CONF_DOC_EXT . '.') != false) {
+                    continue;
+                }
+
                 //filter by ext
                 $a = explode(".", $bin);
                 if (empty($a)) {
