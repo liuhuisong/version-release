@@ -32,14 +32,23 @@ if (empty($version_string)) {
 }
 
 $v = version_compare($version, $version_string);
-if ($v > 0) {
-    return respondMsg('OK', 'GREAT');
-} else if ($v == 0) {
-    return respondMsg('OK', 'SAME');
+if ($v == 0) {
+    $error = 'SAME';
+} else if ($v > 0) {
+    $error = 'GREAT';
 } else {
-    $bin_name = $version_item->getConfig('bin');
-    $url_path = $version_item->getUrlPath($bin_name);
-    $md5 = $version_item->getConfig('md5');
-    $bin_size = $version_item->getConfig('bin-size');
-    return respondMsg('UPDATE', "$version_string : $md5 : $bin_size : $url_path");
+    $error = 'LESS';
 }
+
+$bin_name = $version_item->getConfig('bin');
+$url_path = $version_item->getUrlPath($bin_name);
+$md5 = $version_item->getConfig('md5');
+$bin_size = $version_item->getConfig('bin-size');
+
+$host = $_SERVER['SERVER_NAME'];
+$port = $_SERVER['SERVER_PORT'];
+if ($port = '80') {
+    $host = "$host:$port";
+}
+
+return respondMsg($error, "$version_string : $md5 : $bin_size : http://{$host}{$url_path}");

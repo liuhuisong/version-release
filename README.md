@@ -11,7 +11,9 @@ any bugs to liuhuisong@hotmail.com
 # configure
 - the manager can generate configure automatic, the root configuration name '.__version', the content maybe :
 ```
-user=alice:md5-of-password, bob:md5-of-passwword, ...
+user[]=alice:md5-of-password
+user[]=bob:md5-of-passwword
+...
 ```
 - the project' configuration main name is same to package-bin, and  ext name  is '__version', the content maybe:
 ```
