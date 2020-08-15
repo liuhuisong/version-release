@@ -180,20 +180,37 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                             $active_menu = $dir;
                         }
 
+                        $new_string = '&nbsp;';
+
                         if ($item instanceof VDir) {
                             $label = $item->getDescription(0);
                             $version_list = $item->getVersionList();
                             if ($active_menu == $dir) {
                                 $active_version_list = $version_list;
                             }
+
+                            if (!empty($version_list)) {
+                                $last_it = $version_list[0];
+                                $time_string = $last_it->getConfig('release');
+                                try {
+                                    $date = new DateTime($time_string);
+                                    $now = new DateTime();
+                                    $a = $now->diff($date);
+                                    $day = $a->days;
+                                    if ($day < 5) {
+                                        $new_string = '<span class="glyphicon glyphicon-star" style="color:#ff0000"></span>';
+                                    }
+                                } catch (Exception $e) {
+                                }
+                            }
                         } else {
                             $label = $dir;
                         }
 
                         if ($active_menu == $dir) {
-                            echo "<li role='presentation' class='active'><a>{$label}</a></li>";
+                            echo "<li role='presentation' class='active'><a>{$label} {$new_string}</a></li>";
                         } else {
-                            echo "<li role='presentation'> <a href='$href?menu={$dir}'>{$label}</a></li>";
+                            echo "<li role='presentation'> <a href='$href?menu={$dir}'>{$label} {$new_string}</a></li>";
                         }
                     }
 
@@ -431,8 +448,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <script src="https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/js/bootstrap.min.js"></script>
 <script>
-    let h=$('#menu-bar>nav').outerHeight();
-    $('#menu-container').css('margin-top',h);
+    let h = $('#menu-bar>nav').outerHeight();
+    $('#menu-container').css('margin-top', h);
 
     $('#btn-view-version').click(function () {
         let it = $('#form-add-version');
