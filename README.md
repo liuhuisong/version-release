@@ -20,3 +20,22 @@ user[]=bob:md5-of-passwword
 description='this is descirption for the xxx package'
 user=alice,bob, ...
 ```
+# update
+when the client get http:/host/bin/update.php, it responds text/plain with:
+```
+return=OK
+url=URL
+version=VERSION
+md5=MD5
+update=UPDATE
+size=SIZE
+```
+or
+```
+return=ERROR
+error=error message
+```
+or
+```
+return=NONE
+```
