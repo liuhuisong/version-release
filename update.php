@@ -57,7 +57,7 @@ $release = $version_item->getConfig('release');
 
 $host = $_SERVER['SERVER_NAME'];
 $port = $_SERVER['SERVER_PORT'];
-if ($port = '80') {
+if ($port != '80') {
     $host = "$host:$port";
 }
 
@@ -65,6 +65,6 @@ return respondMsg('OK', [
     'url' => "http://{$host}{$url_path}",
     'version' => $version_string,
     'md5' => $md5,
-    'size' => $bin_size,
-    "update" => $release
+    'update' => $release,
+    'size' => $bin_size
 ]);
