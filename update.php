@@ -7,7 +7,7 @@ define('ALLOW_LOW_VERSION', false);
 function respondMsg($error, $ret)
 {
     header('Content-Type: text/plain; charset=utf-8');
-    echo "return=$ret";
+    echo "return=$error";
     if (is_array($ret)) {
         foreach ($ret as $k => $v) {
             echo "\n$k=$v";
@@ -63,8 +63,8 @@ if ($port = '80') {
 
 return respondMsg('OK', [
     'url' => "http://{$host}{$url_path}",
-    'version' => $version_item,
+    'version' => $version_string,
     'md5' => $md5,
-    "update" => $release,
-    'size' => $bin_size
+    'size' => $bin_size,
+    "update" => $release
 ]);
