@@ -193,8 +193,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                     $now = new DateTime();
                                     $a = $now->diff($date);
                                     $day = $a->days;
-                                    if ($day < 5) {
+                                    if ($day < 10) {
                                         $new_string = '<span class="glyphicon glyphicon-star" style="color:#ff0000"></span>';
+                                    } else if ($day < 20) {
+                                        $new_string = '<span class="glyphicon glyphicon-star" style="color:#761d14"></span>';
+                                    } else if ($day < 45) {
+                                        $new_string = '<span class="glyphicon glyphicon-star" style="color:#936161"></span>';
                                     }
                                 } catch (Exception $e) {
                                 }
