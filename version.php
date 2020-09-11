@@ -307,24 +307,24 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     <div id="upload-info"></div>
                 </div>
                 <br><br>
-                <?php
-                function formatNum($bytes)
-                {
-                    $si_prefix = array('B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB');
-                    $base = 1024;
-                    $class = min((int)log($bytes, $base), count($si_prefix) - 1);
-
-                    return sprintf('%1.2f', $bytes / pow($base, $class)) . ' ' . $si_prefix[$class];
-                }
-
-                $dt = disk_total_space("/");
-                $dts = formatNum($dt);
-                $df = disk_free_space("/");
-                $dfs = formatNum($df);
-                $dfp = sprintf("%.1f", ($dt - $df) * 100 / $dt);
-                echo "<div>Total: $dts , Free: $dfs ,  used: $dfp% </div>";
-                ?>
             </form>
+            <?php
+            function formatNum($bytes)
+            {
+                $si_prefix = array('B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB');
+                $base = 1024;
+                $class = min((int)log($bytes, $base), count($si_prefix) - 1);
+
+                return sprintf('%1.2f', $bytes / pow($base, $class)) . ' ' . $si_prefix[$class];
+            }
+
+            $dt = disk_total_space("/");
+            $dts = formatNum($dt);
+            $df = disk_free_space("/");
+            $dfs = formatNum($df);
+            $dfp = sprintf("%.1f", ($dt - $df) * 100 / $dt);
+            echo "<hr><div>Total: $dts , Free: $dfs ,  used: $dfp% </div>";
+            ?>
         </div>
     </div>
     <div class="row">
