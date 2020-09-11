@@ -157,8 +157,8 @@ class VDir extends VIo
         }
 
         $base_name = "$name_type-$version";
-        if (isset($config['release-ext'])) {
-            $base_name .= ("-" . $config['release-ext']);
+        if (!empty($config['version-suffix'])) {
+            $base_name .= ("-" . $config['version-suffix']);
         }
 
         $ret = $this->moveUploadFileWithExt($file_bin, $this->os_path, $base_name);

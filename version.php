@@ -24,6 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (!preg_match("/[0-9]+(\.[0-9]+){1,3}/", $version)) {
         return $vio->responds('ERROR', 'version error');
     }
+    $suffix = $_POST['version-suffix'];
 
     //pkg-file-bin
     if (!isset($_FILES['pkg-file-bin'])) {
@@ -60,7 +61,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             'version' => $version,
             'description' => $des_array,
             'document' => $document,
-            'compatible' => $compatible));
+            'compatible' => $compatible,
+            'version-suffix' => $suffix));
 
     $vio->responds((is_string($ret) ? 'ERROR' : 'OK'), $ret);
     return;
@@ -238,6 +240,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     <label class="col-sm-2 control-label" for="pkg-version">版本号</label>
                     <div class="col-sm-2">
                         <input type="text" class="form-control" id="pkg-version" placeholder="a.b.c.d">
+                        <select class="form-control" id="version-suffix">
+                            <option value="dev" selected="selected">dev</option>
+                            <option value="alpha">alpha,a</option>
+                            <option value="beta">beta,b</option>
+                            <option value="rc">RC,rc</option>
+                            <option value="pl">pl,p</option>
+                        </select>
                         <input type="hidden" id="pkg-name-type"
                             <?php
                             echo "value=\"$active_menu\"";
@@ -535,6 +544,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             return;
         }
         form_data.append('pkg-password', password);
+
+        let suffix = $('#version-suffix').val();
+        form_data.append('version-suffix', suffix);
 
         $.ajax({
             type: "POST",
