@@ -142,9 +142,15 @@ class VIo
      */
     public function parseVersion($bin)
     {
-        preg_match('/(\d+\.){1,3}\d+/', $bin, $match_array);
-        if (is_array($match_array) && count($match_array) > 0) {
-            return $match_array[0];
+        $regex = '/((?:\d+\.){1,3}\d+)(-[a-z]*)?/';
+        preg_match($regex, $bin, $match_array);
+        if (is_array($match_array)) {
+            $n = count($match_array);
+            if ($n == 2) {
+                return $match_array[1];
+            } else if ($n == 3) {
+                return $match_array[1];
+            }
         }
 
         return false;

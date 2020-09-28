@@ -61,7 +61,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             'version' => $version,
             'description' => $des_array,
             'document' => $document,
-            'compatible' => $compatible,
             'version-suffix' => $suffix));
 
     $vio->responds((is_string($ret) ? 'ERROR' : 'OK'), $ret);
@@ -232,26 +231,28 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 <div class="form-group">
                     <label class="col-sm-2 control-label" for="pkg-file-bin">软件包</label>
                     <div class="col-sm-8">
-                        <input type="file" class="form-control" id="pkg-file-bin"><span>(必填)</span>
+                        <input type="file" class="form-control-file" id="pkg-file-bin"><span>(必填)</span>
                     </div>
                 </div>
 
                 <div class="form-group">
                     <label class="col-sm-2 control-label" for="pkg-version">版本号</label>
-                    <div class="col-sm-2">
-                        <input type="text" class="form-control" id="pkg-version" placeholder="a.b.c.d">
-                        <select class="form-control" id="version-suffix">
-                            <option value="dev" selected="selected">dev</option>
-                            <option value="alpha">alpha,a</option>
-                            <option value="beta">beta,b</option>
-                            <option value="rc">RC,rc</option>
-                            <option value="pl">pl,p</option>
-                        </select>
-                        <input type="hidden" id="pkg-name-type"
-                            <?php
-                            echo "value=\"$active_menu\"";
-                            ?>
-                        />
+                    <div class="col-sm-8">
+                        <div class="form-online">
+                            <input type="text" class="form-control" id="pkg-version" placeholder="a.b.c.d" style="width: 90px;display: inline;">
+                            <select class="form-control" id="version-suffix" style="width: 90px;display: inline;margin-left: -4px;">
+                                <option value="dev" selected="selected">dev</option>
+                                <option value="alpha">alpha</option>
+                                <option value="beta">beta</option>
+                                <option value="rc">rc</option>
+                                <option value="pl">pl</option>
+                            </select>
+                            <input type="hidden" id="pkg-name-type"
+                                <?php
+                                echo "value=\"$active_menu\"";
+                                ?>
+                            />
+                        </div>
                         <span>(必填)</span>
                     </div>
                 </div>
@@ -277,10 +278,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 <div class="form-group">
                     <label class="col-sm-2 control-label" for="pkg-file-attach">附件</label>
                     <div class="col-sm-8">
-                        <input type="file" class="form-control" id="pkg-file-attach">
+                        <input type="file" class="form-control-file" id="pkg-file-attach">
                     </div>
                 </div>
 
+                <!--
                 <div class="form-group">
                     <label class="col-sm-2 control-label" for="pkg-compatible">依赖</label>
                     <div class="col-sm-8">
@@ -289,6 +291,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         <span class="text-danger" id="pkg-compatible-info"></span>
                     </div>
                 </div>
+                -->
 
                 <div class="form-group">
                     <label class="col-sm-2 control-label" for="pkg-user">登录验证</label>
@@ -323,7 +326,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $df = disk_free_space("/");
             $dfs = formatNum($df);
             $dfp = sprintf("%.1f", ($dt - $df) * 100 / $dt);
-            echo "<hr><div>Total: $dts , Free: $dfs ,  used: $dfp% </div>";
+            if($dfp<50){
+                $t='text-success';
+            }else if($dfp<80){
+                $t='text-info';
+            }else{
+                $t='text-danger';
+            }
+            echo "<hr><div class='$t'>Total: $dts , Free: $dfs ,  used: $dfp% </div>";
             ?>
         </div>
     </div>
@@ -521,8 +531,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
 
         form_data.append('pkg-doc-url', $('#pkg-doc-url').val());
-
-        form_data.append('pkg-compatible', $('#pkg-compatible').val());
 
         let fc2 = $('#pkg-file-attach');
         let val2 = fc2.val();

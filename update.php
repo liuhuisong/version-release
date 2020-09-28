@@ -24,9 +24,13 @@ foreach (['branch', 'ver', 'uuid'] as $it) {
     }
 }
 
-$branch = $_GET['branch'];
+$branch = isset($_GET['branch']) ? $_GET['branch'] : (isset($_GET['project']) ? $_GET['project'] : false);
+if (empty($branch)) {
+    return respondMsg('ERROR', "no branch/project");
+}
+
 $version = $_GET['ver'];
-$uuid = $_GET['uuid'];
+//$uuid = $_GET['uuid'];
 
 $dir_obj = new VDir($branch);
 $version_item_list = $dir_obj->getVersionList();
